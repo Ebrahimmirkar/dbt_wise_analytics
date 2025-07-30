@@ -1,5 +1,5 @@
 with review_data as (
-    select *
+    select * 
     from {{ref("int_reviews_with_metrics")}}
 ),
 

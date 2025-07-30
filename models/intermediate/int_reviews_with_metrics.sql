@@ -46,22 +46,22 @@ pc.q3_handling_hours,
 
 --flagging outlier using IQR method 
 case
-when br.created_to_backlog_hours < (pc.q1_created_to_backlog - 1.5 * (pc.q3_created_to_backlog - pc.q1_created_to_backlog ))
-or br.created_to_backlog_hours > (pc.q3_created_to_backlog + 1.5 * (pc.q3_created_to_backlog - pc.q1_created_to_backlog ))
+when br.created_to_backlog_hours < (pc.q1_created_to_backlog - 3 * (pc.q3_created_to_backlog - pc.q1_created_to_backlog ))
+or br.created_to_backlog_hours > (pc.q3_created_to_backlog + 3 * (pc.q3_created_to_backlog - pc.q1_created_to_backlog ))
 then True 
 else False 
 end as is_outlier_created_to_backlog,
 
 case 
-when br.backlog_to_handling_hours < (pc.q1_backlog_to_handling - 1.5 * (pc.q3_backlog_to_handling - pc.q1_backlog_to_handling))
-or br.backlog_to_handling_hours > (pc.q3_backlog_to_handling + 1.5 * (pc.q3_backlog_to_handling - pc.q1_backlog_to_handling))
+when br.backlog_to_handling_hours < (pc.q1_backlog_to_handling - 3 * (pc.q3_backlog_to_handling - pc.q1_backlog_to_handling))
+or br.backlog_to_handling_hours > (pc.q3_backlog_to_handling + 3 * (pc.q3_backlog_to_handling - pc.q1_backlog_to_handling))
 then True
 else False
 end as is_outlier_backlog_to_handle,
 
 case 
-when br.handling_duration_hours < (pc.q1_handling_hours - 1.5 * (pc.q3_handling_hours - pc.q1_handling_hours))
-or br.handling_duration_hours > (pc.q3_handling_hours + 1.5 * (pc.q3_handling_hours - pc.q1_handling_hours))
+when br.handling_duration_hours < (pc.q1_handling_hours - 3 * (pc.q3_handling_hours - pc.q1_handling_hours))
+or br.handling_duration_hours > (pc.q3_handling_hours + 3 * (pc.q3_handling_hours - pc.q1_handling_hours))
 then True
 else False
 end as is_outlier_handling_hours,
