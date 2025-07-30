@@ -89,7 +89,7 @@ reviews as (
     --outlier flags 
     rd.is_outlier_created_to_backlog,
     rd.is_outlier_backlog_to_handle,
-    rd.is_outlier_handling_hours,
+    rd.is_outlier_handling_mins,
     
 
     --case context 
@@ -131,8 +131,8 @@ reviews as (
     end as response_timeliness,
 
     case 
-    when rd.is_any_outlier and case_review_rank_desc = 1 then 'final_review_outlier'
-    when rd.is_any_outlier then 'review_outlier'
+    when rd.is_any_outlier and case_review_rank_desc = 1 then 'Final Review Outlier'
+    when rd.is_any_outlier then 'Review Outlier'
     else 'Normal Review'
     end as quality_flag
     

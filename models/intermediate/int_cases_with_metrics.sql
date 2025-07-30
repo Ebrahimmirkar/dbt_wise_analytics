@@ -3,6 +3,7 @@ with review_data as (
     from {{ref("int_reviews_with_metrics")}}
 ),
 
+
 case_aggregations as(
     select
     case_id, 
@@ -25,13 +26,13 @@ case_aggregations as(
     count(distinct actor_id) as unique_actors_involved, 
 
     --initial created to backlog minutes  
-    datediff(minute, min(case_created_time),min(case_backlog_entry_time)) / 60 as case_created_to_backlog_hours, 
-    avg(backlog_to_handling_hours) as avg_backlog_to_handle_hours, 
-    avg(handling_duration_hours) as avg_handling_duration_hours, 
-    sum(handling_duration_hours) as total_handling_duration_hours, 
+    datediff(minute, min(case_created_time),min(case_backlog_entry_time))  as case_created_to_backlog_mins, 
+    avg(backlog_to_handling_mins) as avg_backlog_to_handle_mins, 
+    avg(handling_duration_mins) as avg_handling_duration_mins, 
+    sum(handling_duration_mins) as total_handling_duration_mins, 
 
     --case lifecycle duration 
-    datediff(minutes, min(case_created_time),max(handling_time_end)) / 60 as total_lifecycle_hours,
+    datediff(minutes, min(case_created_time),max(handling_time_end)) as total_lifecycle_mins,
 
     --outlier_counts
     max(case when is_outlier_created_to_backlog and case_review_rank_asc = 1 then True else False end) as is_case_outlier,
@@ -64,11 +65,12 @@ final_cases as (
 
     select
     *,
+
     case
-    when total_reviews = 1 and total_handling_duration_hours <= 1 then 'Simple'
-    when total_reviews <=2 and total_handling_duration_hours <=4 then 'Standard'
-    when total_reviews <=4 and total_handling_duration_hours <=8 then 'Complex'
-    else 'High Complexity'
+    when total_reviews = 1 and avg_handling_duration_mins <= 2  then 'Simple'
+    when total_reviews <=2 and avg_handling_duration_mins <= 5  then 'Standard'
+    when total_reviews <= 4 and avg_handling_duration_mins <= 20  then 'Complex'
+    else 'Highly Complex'
     end as case_complexity,
 
     --performance flags 

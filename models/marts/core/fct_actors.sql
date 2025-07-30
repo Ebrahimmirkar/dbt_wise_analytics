@@ -21,10 +21,10 @@ actor_review_metrics as (
     count(distinct(case_id))/count(review_id) as avg_review_per_case,
 
     --Time performance metrics 
-    avg(handling_duration_hours) as avg_handling_duration_hours, 
-    median(handling_duration_hours) as median_handling_duration_hours,
-    avg(backlog_to_handling_hours) as avg_response_time_hours, 
-    median(backlog_to_handling_hours) as median_response_time_hours,
+    avg(handling_duration_mins) as avg_handling_duration_mins, 
+    median(handling_duration_mins) as median_handling_duration_mins,
+    avg(backlog_to_handling_mins) as avg_response_time_mins, 
+    median(backlog_to_handling_mins) as median_response_time_mins,
 
     --- Quality Metrics 
     avg(case when is_any_outlier then 1.0 else 0.0 end) as outlier_rate, 
@@ -54,8 +54,8 @@ actor_case_metrics as (
     last_reviewing_actor as actor_id, 
     extract(month, last_handling_date) as group_last_handling_month,
     count(case_id) as cases_completed, 
-    avg(total_lifecycle_hours) as avg_case_lifecycle_hours, 
-    avg(total_handling_duration_hours) as avg_handling_duration_hours, 
+    avg(total_lifecycle_mins) as avg_case_lifecycle_mins, 
+    avg(total_handling_duration_mins) as avg_handling_duration_mins, 
 
 
     --complexity handling
@@ -84,10 +84,10 @@ combined_actor_data as (
 
 
     ---performance metrics 
-    arm.avg_handling_duration_hours,
-    arm.median_handling_duration_hours,
-    arm.avg_response_time_hours,
-    arm.median_response_time_hours,
+    arm.avg_handling_duration_mins,
+    arm.median_handling_duration_mins,
+    arm.avg_response_time_mins,
+    arm.median_response_time_mins,
 
     ---quality metrics 
     arm.outlier_rate,

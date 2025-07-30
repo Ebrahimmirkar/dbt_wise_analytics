@@ -36,14 +36,6 @@ calculated_metrics as (
     datediff('minute', case_backlog_entry_time, handling_time_start) as backlog_to_handling_mins,
     datediff('minute', handling_time_start, handling_time_end) as handling_duration_mins,
 
-
-    --Time diff calculations (hours)
-
-    datediff('minute',case_created_time, case_backlog_entry_time)/60 as created_to_backlog_hours,
-    datediff('minute', case_backlog_entry_time, handling_time_start)/60 as backlog_to_handling_hours,
-    datediff('minute', handling_time_start, handling_time_end)/60  as handling_duration_hours,
-
-
     --Date parts 
     date(handling_time_start) as handling_date,
     extract(year from handling_time_start) as handling_year, 

@@ -20,10 +20,10 @@ actor_dim as (
     select 
     a.last_reviewing_actor, 
     case 
-    when sum(a.total_reviews) >= 1000 then 'High Volume'
-    when sum(a.total_reviews) >= 500 then 'Medium Volume'
-    when sum(a.total_reviews) >= 100 then 'Low Volume'
-    else 'Newbie' end as volume_category,
+    when sum(a.total_reviews) >= 1000 then 'Heavy Volume'
+    when sum(a.total_reviews) >= 500 then 'Moderate Volume'
+    when sum(a.total_reviews) >= 100 then 'Light Volume'
+    else 'Onboarded' end as volume_category,
 
     case
    
@@ -100,25 +100,25 @@ fact_cases as (
     else 'Over 1 Week' end as resolution_speed_category,
 
     case 
-    when cd.avg_backlog_to_handle_hours <= 4 then 'Fast Response'
-    when cd.avg_backlog_to_handle_hours <= 24 then 'Standard Response'
-    when cd.avg_backlog_to_handle_hours <= 72 then 'Slow Response'
-    else 'Very Slow Response'
+    when cd.avg_backlog_to_handle_hours <= 2 then 'Fast Response'
+    when cd.avg_backlog_to_handle_hours <= 4 then 'Standard Response'
+    when cd.avg_backlog_to_handle_hours <= 9 then 'Slow Response'
+    else 'Unsatisfactory Response'
     end as response_time_category,
 
     case 
-    when cd.case_type = 'TYPE_ONE' and cd.total_lifecycle_hours <= 24 then True
-    when cd.case_type = 'TYPE_TWO' and cd.total_lifecycle_hours <= 48 then True
-    when cd.case_type = 'TYPE_THREE' and cd.total_lifecycle_hours <= 72 then True
+    when cd.case_type = 'TYPE_ONE' and cd.total_lifecycle_hours <= 9 then True
+    when cd.case_type = 'TYPE_TWO' and cd.total_lifecycle_hours <= 24 then True
+    when cd.case_type = 'TYPE_THREE' and cd.total_lifecycle_hours <= 48 then True
     else False
     end as meets_sla_target,
 
-    -- customer experience indicators
+    -- customer experience indicators higher is better 
     case 
-    when cd.total_reviews = 1 and cd.total_lifecycle_hours <= 24 then 'Excellent'
-    when cd.total_reviews <= 2 and cd.total_lifecycle_hours <= 48 then 'Good'
-    when cd.total_reviews <= 3 and cd.total_lifecycle_hours <= 72 then 'Fair'
-    else 'Poor'
+    when cd.total_reviews = 1 and cd.total_lifecycle_hours <= 9 then 10
+    when cd.total_reviews <= 2 and cd.total_lifecycle_hours <= 24 then 7
+    when cd.total_reviews <= 3 and cd.total_lifecycle_hours <= 48 then 4
+    else 1
     end as customer_experience_rating,
 
 -- operational efficiency indicators
