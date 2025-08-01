@@ -65,11 +65,11 @@ fact_cases as (
     ---case metrics 
     cd.total_reviews,
     cd.unique_actors_involved,
-    cd.total_handling_duration_hours,
-    cd.total_lifecycle_hours,
-    cd.case_created_to_backlog_hours,
-    cd.avg_backlog_to_handle_hours,
-    cd.avg_handling_duration_hours,
+    cd.total_handling_duration_mins,
+    cd.total_lifecycle_mins,
+    cd.case_created_to_backlog_mins,
+    cd.avg_backlog_to_handle_mins,
+    cd.avg_handling_duration_mins,
     
 
     --quality metrics 
@@ -92,45 +92,43 @@ fact_cases as (
     ad.specialization_type, 
     ad.tenure_category,
 
-    --derived business metrics 
+    --derived business metrics (numbers in minutes)
     case
-    when cd.total_lifecycle_hours <= 24 then 'Same Day'
-    when cd.total_lifecycle_hours <= 72 then 'Within 3 Days'
-    when cd.total_lifecycle_hours <= 168 then 'Within 1 week'
+    when cd.total_lifecycle_mins <= 1440 then 'Same Day'
+    when cd.total_lifecycle_mins <= 4320 then 'Within 3 Days'
+    when cd.total_lifecycle_mins <= 10080 then 'Within 1 week'
     else 'Over 1 Week' end as resolution_speed_category,
 
     case 
-    when cd.avg_backlog_to_handle_hours <= 2 then 'Fast Response'
-    when cd.avg_backlog_to_handle_hours <= 4 then 'Standard Response'
-    when cd.avg_backlog_to_handle_hours <= 9 then 'Slow Response'
+    when cd.avg_backlog_to_handle_mins <= 60 then 'Fast Response'
+    when cd.avg_backlog_to_handle_mins <= 180 then 'Standard Response'
+    when cd.avg_backlog_to_handle_mins <= 240 then 'Slow Response'
     else 'Unsatisfactory Response'
     end as response_time_category,
-
+    -- sla calculated based on percentile count of total_lifecycle_mins by case_type
     case 
-    when cd.case_type = 'TYPE_ONE' and cd.total_lifecycle_hours <= 9 then True
-    when cd.case_type = 'TYPE_TWO' and cd.total_lifecycle_hours <= 24 then True
-    when cd.case_type = 'TYPE_THREE' and cd.total_lifecycle_hours <= 48 then True
+    when cd.case_type = 'TYPE_ONE' and cd.total_lifecycle_mins <= 646 then True
+    when cd.case_type = 'TYPE_TWO' and cd.total_lifecycle_mins <= 7477 then True
+    when cd.case_type = 'TYPE_THREE' and cd.total_lifecycle_mins <= 3242 then True
     else False
-    end as meets_sla_target,
+    end as meets_lifecycle_sla_target,
 
-    -- customer experience indicators higher is better 
+    -- parameters calculated per percentile count of lifecycle_mins
     case 
-    when cd.total_reviews = 1 and cd.total_lifecycle_hours <= 9 then 10
-    when cd.total_reviews <= 2 and cd.total_lifecycle_hours <= 24 then 7
-    when cd.total_reviews <= 3 and cd.total_lifecycle_hours <= 48 then 4
+    when cd.total_reviews = 1 and cd.total_lifecycle_mins <= 56 then 10
+    when cd.total_reviews <= 2 and cd.total_lifecycle_mins <= 470 then 7
+    when cd.total_reviews <= 3 and cd.total_lifecycle_mins <= 2386 then 4
     else 1
     end as customer_experience_rating,
 
 -- operational efficiency indicators
-    cd.total_handling_duration_hours / nullif(cd.total_lifecycle_hours, 0) as handling_efficiency_ratio,
+    cd.total_handling_duration_mins / nullif(cd.total_lifecycle_mins, 0) as handling_efficiency_ratio,
 
     case 
     when cd.unique_actors_involved = 1 then 'Single Agent Resolution'
     when cd.unique_actors_involved = 2 then 'Two Agent Handoff'
     else 'Multiple Agent Escalation'
     end as agent_handoff_pattern,
-
-
 
 
 
@@ -143,9 +141,9 @@ final_fact_cases as (
         
         -- business priority scoring (for capacity planning)
         case 
-            when case_type = 'TYPE_THREE' and not meets_sla_target then 'Critical'
-            when case_type = 'TYPE_TWO' and not meets_sla_target then 'High'
-            when case_type = 'TYPE_ONE' and not meets_sla_target then 'Medium'
+            when case_type = 'TYPE_THREE' and not meets_lifecycle_sla_target then 'Critical'
+            when case_type = 'TYPE_TWO' and not meets_lifecycle_sla_target then 'High'
+            when case_type = 'TYPE_ONE' and not meets_lifecycle_sla_target then 'Medium'
             else 'Low'
         end as priority_level,
         

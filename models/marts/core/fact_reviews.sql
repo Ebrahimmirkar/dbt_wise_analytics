@@ -22,7 +22,7 @@ actor_dim as (
     else 'Generalist'
     end as specialization_type,
 
-    avg(handling_duration_hours) as avg_total_handling_duration_hours,
+    avg(handling_duration_mins) as avg_total_handling_duration_mins,
     avg(case WHEN is_any_outlier then 1.0 else 0 end) as actor_outlier_rate, 
 
   CASE 
@@ -39,10 +39,11 @@ case_context as (
     select 
     case_id, 
     max(case_complexity) as case_complexity, 
-    case when count(total_reviews) > 1 then True else False end as is_multi_review_case, 
+    case when sum(total_reviews) > 1 then True else False end as is_multi_review_case, 
     MAX(unique_actors_involved) as case_actors_involved
 
     from {{ref("int_cases_with_metrics")}}
+     
     group by case_id
 
 ),
@@ -70,11 +71,11 @@ reviews as (
     rd.handling_day_of_week,
     rd.handling_hour,
 
-    ---Time metrics (in hours - can be converted laters if visualization becomes an issue with too many decimals )
+    ---Time metrics (in mins - can be converted laters if visualization becomes an issue with too many decimals )
     
-    rd.created_to_backlog_hours,
-    rd.backlog_to_handling_hours,
-    rd.handling_duration_hours,
+    rd.created_to_backlog_mins,
+    rd.backlog_to_handling_mins,
+    rd.handling_duration_mins,
     
 
     -- Business fields
@@ -102,7 +103,7 @@ reviews as (
     ad.volume_category,
     ad.specialization_type, 
     ad.tenure_category as actor_tenure, 
-    ad.avg_total_handling_duration_hours as actor_avg_handling_hours, 
+    ad.avg_total_handling_duration_mins as actor_avg_handling_mins, 
     ad.actor_outlier_rate, 
 
     --review position context 
@@ -112,7 +113,7 @@ reviews as (
     else 'Mid-Review'
     end as review_postition, 
 
-    --handling hours 
+    --handling hour
     case 
     when rd.handling_hour between 9 and 17 then 'Business Hours'
     when rd.handling_hour between 7 and 19 then 'Extended Hours'
@@ -121,12 +122,12 @@ reviews as (
 
     case when rd.handling_day_of_week in (6,7) then ('Weekend') else 'Weekday' end as handling_day_type, 
 
-    ---business impact indicators 
+    ---business impact indicators, timings bifurcated as 1, 12, 24 hours (in mins)
 
     case 
-    when rd.handling_duration_hours <= 1 then 'Immediate'
-    when rd.handling_duration_hours <= 4 then 'Same Day'
-    when rd.handling_duration_hours <=24 then 'Next Day'
+    when rd.handling_duration_mins <= 60 then 'Immediate'
+    when rd.handling_duration_mins <= 720 then 'Same Day'
+    when rd.handling_duration_mins <= 1440 then 'Next Day'
     else 'Delayed'
     end as response_timeliness,
 
@@ -149,10 +150,12 @@ reviews as (
 
 final_reviews as (
     select *,
+    
+    --numbers defined using percentile_cont(0.25,0.50,0.75)
     case 
-    when handling_duration_hours <= 0.25 then 'Immediate'
-    when handling_duration_hours <= 0.5 then 'Fast'
-    when handling_duration_hours <= 1.0 then 'Standard'
+    when handling_duration_mins <= 2 then 'Immediate'
+    when handling_duration_mins <= 3 then 'Fast'
+    when handling_duration_mins <= 6 then 'Standard'
     else 'Slow'
     end as handling_speed_detail  
 

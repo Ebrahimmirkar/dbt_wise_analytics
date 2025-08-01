@@ -1,5 +1,5 @@
 with actor_reviews as (
-    select * , extract(month, handling_time_end) as group_month
+    select * , Datefromparts(year(handling_time_end),month(handling_time_end),1) as month_start ,extract(month, handling_time_end) as group_month
     from {{ref("int_reviews_with_metrics")}}
 ),
 
@@ -13,6 +13,7 @@ actor_review_metrics as (
     select 
 
     actor_id,
+    month_start,
     group_month,
 
     --volume metrics 
@@ -31,9 +32,9 @@ actor_review_metrics as (
     count(case when is_any_outlier then 1 else 0 end) as total_outlier_reviews,
 
     --case type distribution 
-    count(case when case_type = 'TYPE_ONE' then 1 end) as type_one_cases,
-    count(case when case_type = 'TYPE_TWO' then 1 end ) as type_two_cases, 
-    count(case when case_type = 'TYPE_THREE' then 1 end) as type_three_cases,
+    count(distinct case when case_type = 'TYPE_ONE' then 1 end) as type_one_cases,
+    count(distinct case when case_type = 'TYPE_TWO' then 1 end ) as type_two_cases, 
+    count(distinct case when case_type = 'TYPE_THREE' then 1 end) as type_three_cases,
 
     -- Speed Categorization
     avg(case 
@@ -46,12 +47,13 @@ actor_review_metrics as (
 
 
     from actor_reviews
-    group by actor_id, group_month
+    group by actor_id, month_start, group_month
 ),
 
 actor_case_metrics as (
     select 
     last_reviewing_actor as actor_id, 
+    Datefromparts(year(last_handling_date),month(last_handling_date),1) as group_last_month_start,
     extract(month, last_handling_date) as group_last_handling_month,
     count(case_id) as cases_completed, 
     avg(total_lifecycle_mins) as avg_case_lifecycle_mins, 
@@ -67,13 +69,14 @@ actor_case_metrics as (
 
     from actor_cases
     where last_reviewing_actor is not null
-    group by last_reviewing_actor, group_last_handling_month
+    group by last_reviewing_actor,group_last_month_start, group_last_handling_month
 ),
 
 combined_actor_data as (
 
     select 
     arm.actor_id,
+    arm.month_start,
     arm.group_month, 
 
     ---volumes 
@@ -108,7 +111,7 @@ combined_actor_data as (
 
     
     from actor_review_metrics arm
-    left join actor_case_metrics acm on acm.actor_id = arm.actor_id and acm.group_last_handling_month = arm.group_month
+    left join actor_case_metrics acm on acm.actor_id = arm.actor_id and arm.month_start = acm.group_last_month_start and acm.group_last_handling_month = arm.group_month 
 
 )
 
